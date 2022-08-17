@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 
 	"github.com/Omar-Belghaouti/mongo-grpc/pb"
@@ -13,7 +14,21 @@ func main() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+	defer cc.Close()
 
 	c := pb.NewBlogServiceClient(cc)
-	_ = c
+
+	// create a blog
+	req := &pb.CreateBlogRequest{
+		Blog: &pb.Blog{
+			AuthorId: "Omar",
+			Title:    "My First Blog",
+			Content:  "Content of the first blog",
+		},
+	}
+	res, err := c.CreateBlog(context.Background(), req)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	log.Printf("blog created: %v", res.GetBlog())
 }
