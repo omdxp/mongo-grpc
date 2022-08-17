@@ -1,0 +1,14 @@
+syntax = "proto3";
+option go_package = "github.com/Omar-Belghaouti/mongo-grpc/pb";
+package pb;
+
+message Blog {
+    string id = 1;
+    string author_id = 2;
+    string title = 3;
+    string content = 4;
+}
+
+service BlogService {
+    
+}
