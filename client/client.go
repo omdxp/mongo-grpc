@@ -23,7 +23,10 @@ func main() {
 	// createBlog(c)
 
 	// read a blog
-	readBlog(c)
+	// readBlog(c)
+
+	// update a blog
+	updateBlog(c)
 }
 
 func createBlog(c pb.BlogServiceClient) {
@@ -62,4 +65,26 @@ func readBlog(c pb.BlogServiceClient) {
 	}
 
 	log.Printf("blog found: %v", res.GetBlog())
+}
+
+func updateBlog(c pb.BlogServiceClient) {
+	req := &pb.UpdateBlogRequest{
+		Blog: &pb.Blog{
+			Id:       "62fcaacf410e7788bd475335",
+			AuthorId: "Ramo",
+			Title:    "New Title",
+			Content:  "New content",
+		},
+	}
+	res, err := c.UpdateBlog(context.Background(), req)
+	if err != nil {
+		s, ok := status.FromError(err)
+		if ok {
+			log.Print(s.Code(), ": ", s.Message())
+		} else {
+			log.Fatal(err.Error())
+		}
+	}
+
+	log.Printf("blog updated: %v", res.GetBlog())
 }

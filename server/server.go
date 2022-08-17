@@ -65,6 +65,7 @@ func (s *server) CreateBlog(ctx context.Context, req *pb.CreateBlogRequest) (*pb
 
 // read blog from mongodb
 func (s *server) ReadBlog(ctx context.Context, req *pb.ReadBlogRequest) (*pb.ReadBlogResponse, error) {
+	log.Print("ReadBlog invoked")
 	blodId := req.GetBlogId()
 
 	oid, err := primitive.ObjectIDFromHex(blodId)
@@ -90,6 +91,48 @@ func (s *server) ReadBlog(ctx context.Context, req *pb.ReadBlogRequest) (*pb.Rea
 		},
 	}, nil
 }
+
+// update blog in mongodb
+func (s *server) UpdateBlog(ctx context.Context, req *pb.UpdateBlogRequest) (*pb.UpdateBlogResponse, error) {
+	log.Print("UpdateBlog invoked")
+	blog := req.GetBlog()
+
+	oid, err := primitive.ObjectIDFromHex(blog.GetId())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "cannot parse id")
+	}
+
+	// find document by id
+	_, err = s.ReadBlog(ctx, &pb.ReadBlogRequest{
+		BlogId: oid.Hex(),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// update document
+	data := &blogItem{
+		ID:       oid,
+		AuthorID: blog.AuthorId,
+		Content:  blog.Content,
+		Title:    blog.Title,
+	}
+
+	_, err = collection.ReplaceOne(ctx, bson.D{{Key: "_id", Value: oid}}, data)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "internal err: %s", err.Error())
+	}
+
+	return &pb.UpdateBlogResponse{
+		Blog: &pb.Blog{
+			Id:       oid.Hex(),
+			AuthorId: data.AuthorID,
+			Title:    data.Title,
+			Content:  data.Content,
+		},
+	}, nil
+}
+
 func main() {
 	// if we crash the go code, we get the file name and line number
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
