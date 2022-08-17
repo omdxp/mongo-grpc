@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/Omar-Belghaouti/mongo-grpc/pb"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -62,6 +63,33 @@ func (s *server) CreateBlog(ctx context.Context, req *pb.CreateBlogRequest) (*pb
 	}, nil
 }
 
+// read blog from mongodb
+func (s *server) ReadBlog(ctx context.Context, req *pb.ReadBlogRequest) (*pb.ReadBlogResponse, error) {
+	blodId := req.GetBlogId()
+
+	oid, err := primitive.ObjectIDFromHex(blodId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "cannot parse id")
+	}
+
+	var res *blogItem
+	err = collection.FindOne(ctx, bson.D{{Key: "_id", Value: oid}}).Decode(&res)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, status.Error(codes.NotFound, "document not found")
+		}
+		return nil, status.Errorf(codes.Internal, "internal err: %s", err.Error())
+	}
+
+	return &pb.ReadBlogResponse{
+		Blog: &pb.Blog{
+			Id:       res.ID.Hex(),
+			AuthorId: res.AuthorID,
+			Title:    res.Title,
+			Content:  res.Content,
+		},
+	}, nil
+}
 func main() {
 	// if we crash the go code, we get the file name and line number
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
