@@ -157,6 +157,37 @@ func (s *server) DeleteBlog(ctx context.Context, req *pb.DeleteBlogRequest) (*pb
 	}, nil
 }
 
+func (s *server) ListBlog(req *pb.ListBlogRequest, stream pb.BlogService_ListBlogServer) error {
+	log.Print("ListBlog invoked")
+
+	cur, err := collection.Find(context.Background(), bson.M{})
+	if err != nil {
+		return status.Errorf(codes.Internal, "internal err: %s", err.Error())
+	}
+	defer cur.Close(context.Background())
+
+	// iterate over data
+	var data *blogItem
+	for cur.Next(context.Background()) {
+		err := cur.Decode(&data)
+		if err != nil {
+			return status.Errorf(codes.Internal, "internal err: %s", err.Error())
+		}
+		stream.Send(&pb.ListBlogResponse{
+			Blog: &pb.Blog{
+				Id:       data.ID.Hex(),
+				AuthorId: data.AuthorID,
+				Title:    data.Title,
+				Content:  data.Content,
+			},
+		})
+	}
+	if err := cur.Err(); err != nil {
+		return status.Errorf(codes.Internal, "internal err: %s", err.Error())
+	}
+	return nil
+}
+
 func main() {
 	// if we crash the go code, we get the file name and line number
 	log.SetFlags(log.LstdFlags | log.Lshortfile)

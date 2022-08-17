@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"io"
 	"log"
 
 	"github.com/Omar-Belghaouti/mongo-grpc/pb"
@@ -29,7 +30,10 @@ func main() {
 	// updateBlog(c)
 
 	// delete a blog
-	deleteBlog(c)
+	// deleteBlog(c)
+
+	// list blogs
+	listBlogs(c)
 }
 
 func createBlog(c pb.BlogServiceClient) {
@@ -107,4 +111,27 @@ func deleteBlog(c pb.BlogServiceClient) {
 	}
 
 	log.Printf("blog deleted: %s", res.GetBlogId())
+}
+
+func listBlogs(c pb.BlogServiceClient) {
+	stream, err := c.ListBlog(context.Background(), &pb.ListBlogRequest{})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	for {
+		res, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			s, ok := status.FromError(err)
+			if ok {
+				log.Print(s.Code(), ": ", s.Message())
+			} else {
+				log.Fatal(err.Error())
+			}
+		}
+		log.Printf("blog received: %v", res.GetBlog())
+	}
 }
