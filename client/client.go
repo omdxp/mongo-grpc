@@ -26,7 +26,10 @@ func main() {
 	// readBlog(c)
 
 	// update a blog
-	updateBlog(c)
+	// updateBlog(c)
+
+	// delete a blog
+	deleteBlog(c)
 }
 
 func createBlog(c pb.BlogServiceClient) {
@@ -87,4 +90,21 @@ func updateBlog(c pb.BlogServiceClient) {
 	}
 
 	log.Printf("blog updated: %v", res.GetBlog())
+}
+
+func deleteBlog(c pb.BlogServiceClient) {
+	req := &pb.DeleteBlogRequest{
+		BlogId: "62fcaacf410e7788bd475335",
+	}
+	res, err := c.DeleteBlog(context.Background(), req)
+	if err != nil {
+		s, ok := status.FromError(err)
+		if ok {
+			log.Print(s.Code(), ": ", s.Message())
+		} else {
+			log.Fatal(err.Error())
+		}
+	}
+
+	log.Printf("blog deleted: %s", res.GetBlogId())
 }
